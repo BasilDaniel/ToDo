@@ -20,6 +20,9 @@ body {
 .todo-item{
     margin-bottom: 5px;
 }
+.button{
+    width: 65px;
+}
 
 
 

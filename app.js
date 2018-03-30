@@ -45,15 +45,18 @@ class Model extends PubSub{
         return todoItem;
     }
 
-    updateTodoItem(id, todoItemdata){
-        let todoItem = this.getTodoItem(id);
-        Object.keys(todoItemdata).forEach(param => todoItem[param] = todoItemdata[param]);
+    updateTodoItem(todoItemData){
+        let todoItem = this.getTodoItem(todoItemData.id);
+        Object.keys(todoItemData).forEach(param => todoItem[param] = todoItemData[param]);
+        this.saveToStorage(this.todoItems);
     }
 
     deleteTodoItem(id){
         let index = this.todoItems.findIndex(todoItem => todoItem.id == id);
-        if (index != -1)
-            this.todoItems.slice(index, 1);
+        if (index > -1) {
+            this.todoItems.splice(index, 1);
+        }
+        this.saveToStorage(this.todoItems);
     }
 
     saveToStorage(todoItems){
@@ -77,17 +80,25 @@ class View extends PubSub{
         this.todoList = document.getElementById("todo-list");
         this.todoItemTemplate = 
         `
-        <input type="text" class="form-control todo-item-text" value="" readonly>
+        <input type="text" class="form-control todo-item-text" readonly>
             <span class="input-group-btn">
-                <button class="btn btn-default todo-edit">Edit</button>
-                <button class="btn btn-default todo-delete">Delete</button>
+                <button class="btn btn-default todo-edit button">Edit</button>
+                <button class="btn btn-default todo-delete button">Delete</button>
             </span>
         `;
+    }
+
+    renderView(todoItems){
+        this.todoList.innerHTML = "";
+        for(let i=0; i<todoItems.length; i++){
+            this.addTodoItem(todoItems[i]);
+        }
     }
 
     addTodoItemHandler(){
         if(!this.input.value) return alert("Please fill in the field")
         let inputValue = this.input.value;
+        this.input.value = "";
         this.emit('addToDoItem', inputValue);
     }
 
@@ -109,9 +120,25 @@ class View extends PubSub{
     }
 
     editTodoItemHandler({ target}){
+        let button = target;
         let todoItem = target.parentNode.parentNode;
-        let todoItemId = todoItem.getAttribute('id');
-        this.emit('editToDoItem', todoItemId);
+        let editingTodoItem = todoItem.querySelector('input');
+        if (button.innerHTML == "Edit"){
+            button.innerHTML = "Save"            
+            editingTodoItem.readOnly = false;
+        }
+        else{
+            button.innerHTML = "Edit"
+            editingTodoItem.readOnly = true;
+            let todoItemId = todoItem.getAttribute('id');
+            let todoItemData = {
+            id: todoItemId,
+            inputValue: editingTodoItem.value,
+            completed: false
+            };
+            this.emit('editToDoItem', todoItemData);
+        }        
+        
     }
 
     deleteTodoItemHandler({ target}){
@@ -142,19 +169,19 @@ class Controller {
         this.view.addTodoItem(todoItem);
     }
 
-    editToDoItem(todoItemId){
-        console.log(todoItemId);
+    editToDoItem(todoItemData){
+        console.log(todoItemData);
+        this.model.updateTodoItem(todoItemData);
+        this.renderView(this.model.todoItems);
     }
 
     deleteToDoItem(todoItemId){
-        console.log(todoItemId);
+        this.model.deleteTodoItem(todoItemId);
+        this.renderView(this.model.todoItems);
     }
 
     renderView(todoItems){
-        console.log(todoItems);
-        for(let i=0; i<todoItems.length; i++){
-            this.view.addTodoItem(todoItems[i]);
-        }
+        this.view.renderView(todoItems);
     }
 }
 
