@@ -20,11 +20,9 @@ class Model extends PubSub{
         super();
         if(localStorage.getItem("todoApp")){
             this.todoItems = JSON.parse(localStorage.getItem("todoApp"));
-            console.log(this.events);
         }
         else{
             this.todoItems = [];
-            console.log("no items");
         }
     }
 
@@ -170,7 +168,6 @@ class Controller {
     }
 
     editToDoItem(todoItemData){
-        console.log(todoItemData);
         this.model.updateTodoItem(todoItemData);
         this.renderView(this.model.todoItems);
     }
