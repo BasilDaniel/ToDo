@@ -1,6 +1,38 @@
-class Model {
+class PubSub {
     constructor(){
-        this.todoItems = localStorage.getItem("todoApp") ? JSON.parse(localStorage.getItem("todoApp")) : [];
+        this.events = {};
+    }
+
+    on(evenName, fn){
+        this.events[evenName] =  this.events[evenName] || [];
+        this.events[evenName].push(fn);
+    }
+
+    emit(evenName, params){
+        if(this.events[evenName]){
+            this.events[evenName].forEach(fn => fn(params))
+        }
+    }
+}
+
+class Model extends PubSub{
+    constructor(){
+        super();
+        if(localStorage.getItem("todoApp")){
+            this.todoItems = JSON.parse(localStorage.getItem("todoApp"));
+            console.log(this.events);
+        }
+        else{
+            this.todoItems = [];
+            console.log("no items");
+        }
+    }
+
+    getLastTodoItemId(){
+        if(this.todoItems.length == 0) return 0;
+        else {
+            return this.todoItems[this.todoItems.length - 1].id;
+        }
     }
 
     getTodoItem(id){
@@ -10,6 +42,7 @@ class Model {
     addTodoItem(todoItem){
         this.todoItems.push(todoItem);
         this.saveToStorage(this.todoItems);
+        return todoItem;
     }
 
     updateTodoItem(id, todoItemdata){
@@ -53,9 +86,9 @@ class View extends PubSub{
     }
 
     addTodoItemHandler(){
-        if(!this.input.value) return alert("Please fill in the form")
+        if(!this.input.value) return alert("Please fill in the field")
         let inputValue = this.input.value;
-        this.emit('addToDoItem',value);
+        this.emit('addToDoItem', inputValue);
     }
 
     createTodoItem(todoItem){
@@ -67,21 +100,24 @@ class View extends PubSub{
         return div;
     }
 
-    addTodoItem(){
-        item = this.createTodoItem(todoItem);
+    addTodoItem(todoItem){
+        let item = this.createTodoItem(todoItem);
         this.todoList.appendChild(item);
-        document.getElementById(todoItem.id).querySelector('input').value = todoItem.value;
-        document.getElementById(todoItem.id).querySelector('.todo-edit').addEventListener('click', this.editTodoItem.bind(this));
-        document.getElementById(todoItem.id).querySelector('.todo-delete').addEventListener('click', this.deleteTodoItem.bind(this));
-
+        document.getElementById(todoItem.id).querySelector('input').value = todoItem.inputValue;
+        document.getElementById(todoItem.id).querySelector('.todo-edit').addEventListener('click', this.editTodoItemHandler.bind(this));
+        document.getElementById(todoItem.id).querySelector('.todo-delete').addEventListener('click', this.deleteTodoItemHandler.bind(this));
     }
 
-    editTodoItem(){
-
+    editTodoItemHandler({ target}){
+        let todoItem = target.parentNode.parentNode;
+        let todoItemId = todoItem.getAttribute('id');
+        this.emit('editToDoItem', todoItemId);
     }
 
-    deleteTodoItem(){
-
+    deleteTodoItemHandler({ target}){
+        let todoItem = target.parentNode.parentNode;
+        let todoItemId = todoItem.getAttribute('id');
+        this.emit('deleteToDoItem', todoItemId);
     }
 }
 
@@ -89,22 +125,35 @@ class Controller {
     constructor(){
         this.view = new View();
         this.model = new Model();
-    }
-}
-
-class PubSub {
-    constructor(){
-        this.events = {};
-    }
-
-    on(evenName, fn){
-        this.events[evenName] =  this.events[evenName] || [];
-        this.events[evenName].push(fn);
+        this.view.on('addToDoItem', this.addToDoItem.bind(this));
+        this.view.on('editToDoItem', this.editToDoItem.bind(this));
+        this.view.on('deleteToDoItem', this.deleteToDoItem.bind(this));
+        this.model.on('init', this.renderView.bind(this));
+        if(this.model.todoItems != []){this.model.emit('init', this.model.todoItems);}
     }
 
-    emit(evenName, params){
-        if(this.events[evenName]){
-            this.events[evenName].forEach(fn => fn(params))
+    addToDoItem(inputValue){
+        let todoItemId = this.model.getLastTodoItemId() + 1;
+        let todoItem = this.model.addTodoItem({
+            id: todoItemId,
+            inputValue,
+            completed: false
+        });
+        this.view.addTodoItem(todoItem);
+    }
+
+    editToDoItem(todoItemId){
+        console.log(todoItemId);
+    }
+
+    deleteToDoItem(todoItemId){
+        console.log(todoItemId);
+    }
+
+    renderView(todoItems){
+        console.log(todoItems);
+        for(let i=0; i<todoItems.length; i++){
+            this.view.addTodoItem(todoItems[i]);
         }
     }
 }
