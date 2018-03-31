@@ -116,7 +116,7 @@ class View extends PubSub{
     createTodoItem(todoItem){
         let div = document.createElement("div");
         div.id = todoItem.id;
-        div.className = "input-group todo-item";
+        div.className = "input-group todo-item col-lg-12 col-sm-11 col-xs-9";
         div.innerHTML = this.todoItemTemplate;
 
         return div;
