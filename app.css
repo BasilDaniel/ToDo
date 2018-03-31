@@ -23,6 +23,9 @@ body {
 .button{
     width: 65px;
 }
+.done{
+    text-decoration:line-through;
+}
 
 
 

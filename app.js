@@ -73,16 +73,17 @@ class View extends PubSub{
     constructor(){
         super();
         this.input = document.getElementById("todo-input");
-        this.button = document.getElementById("todo-add");
-        this.button.addEventListener('click', this.addTodoItemHandler.bind(this));
+        this.addButton = document.getElementById("todo-add");
+        this.addButton.addEventListener('click', this.addTodoItemHandler.bind(this));
         this.todoList = document.getElementById("todo-list");
         this.todoItemTemplate = 
         `
         <input type="text" class="form-control todo-item-text" readonly>
-            <span class="input-group-btn">
-                <button class="btn btn-default todo-edit button">Edit</button>
-                <button class="btn btn-default todo-delete button">Delete</button>
-            </span>
+        <span class="input-group-btn">        
+            <button class="btn btn-default todo-checkbox button">Active</button>
+            <button class="btn btn-default todo-edit button">Edit</button>
+            <button class="btn btn-default todo-delete button">Delete</button>
+        </span>
         `;
     }
 
@@ -112,9 +113,44 @@ class View extends PubSub{
     addTodoItem(todoItem){
         let item = this.createTodoItem(todoItem);
         this.todoList.appendChild(item);
-        document.getElementById(todoItem.id).querySelector('input').value = todoItem.inputValue;
+        document.getElementById(todoItem.id).querySelector('input').value = todoItem.inputValue;        
+        if(todoItem.completed){
+            document.getElementById(todoItem.id).querySelector('.todo-checkbox').innerHTML = "Done";
+            document.getElementById(todoItem.id).querySelector('input').classList.add("done");
+        }
+        else{
+            document.getElementById(todoItem.id).querySelector('.todo-checkbox').innerHTML = "Active";
+            document.getElementById(todoItem.id).querySelector('input').classList.remove("done");
+        }
         document.getElementById(todoItem.id).querySelector('.todo-edit').addEventListener('click', this.editTodoItemHandler.bind(this));
         document.getElementById(todoItem.id).querySelector('.todo-delete').addEventListener('click', this.deleteTodoItemHandler.bind(this));
+        document.getElementById(todoItem.id).querySelector('.todo-checkbox').addEventListener('click', this.checkboxTodoItemHandler.bind(this));
+    }
+
+    checkboxTodoItemHandler({ target }){
+        let button = target;
+        let todoItem = target.parentNode.parentNode;
+        let editingTodoItem = todoItem.querySelector('input');
+        let todoItemId = todoItem.getAttribute('id');
+        if (button.innerHTML == "Active"){
+            console.log(button);
+            button.innerHTML = "Done";
+            let todoItemData = {
+                id: todoItemId,
+                inputValue: editingTodoItem.value,
+                completed: true
+                };
+            this.emit('checkboxTodoItem', todoItemData);          
+        }
+        else{
+            button.innerHTML = "Active";
+            let todoItemData = {
+                id: todoItemId,
+                inputValue: editingTodoItem.value,
+                completed: false
+            };
+            this.emit('checkboxTodoItem', todoItemData);
+        }
     }
 
     editTodoItemHandler({ target}){
@@ -135,8 +171,7 @@ class View extends PubSub{
             completed: false
             };
             this.emit('editToDoItem', todoItemData);
-        }        
-        
+        }
     }
 
     deleteTodoItemHandler({ target}){
@@ -153,6 +188,7 @@ class Controller {
         this.view.on('addToDoItem', this.addToDoItem.bind(this));
         this.view.on('editToDoItem', this.editToDoItem.bind(this));
         this.view.on('deleteToDoItem', this.deleteToDoItem.bind(this));
+        this.view.on('checkboxTodoItem', this.checkboxTodoItem.bind(this));
         this.model.on('init', this.renderView.bind(this));
         if(this.model.todoItems != []){this.model.emit('init', this.model.todoItems);}
     }
@@ -165,6 +201,11 @@ class Controller {
             completed: false
         });
         this.view.addTodoItem(todoItem);
+    }
+
+    checkboxTodoItem(todoItemData){
+        this.model.updateTodoItem(todoItemData);
+        this.renderView(this.model.todoItems);
     }
 
     editToDoItem(todoItemData){
