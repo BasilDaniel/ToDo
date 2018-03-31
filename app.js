@@ -74,10 +74,13 @@ class View extends PubSub{
         super();
         this.input = document.getElementById("todo-input");
         this.addButton = document.getElementById("todo-add");
+        this.sortButton = document.getElementById("todo-sort");
         this.addButton.addEventListener('click', this.addTodoItemHandler.bind(this));
+        this.sortButton.addEventListener('click', this.sortTodoItemHandler.bind(this));
         this.input.addEventListener('keyup', this.addTodoItemHandler.bind(this));
 
         this.todoList = document.getElementById("todo-list");
+        this.sortTodoList = false;
         this.todoItemTemplate = 
         `
         <input type="text" class="form-control todo-item-text" readonly>
@@ -99,12 +102,15 @@ class View extends PubSub{
     addTodoItemHandler(e){
         event.preventDefault();
         if(e.keyCode === 13 || e.keyCode == undefined){
-            console.log(e.keyCode);
             if(!this.input.value) return alert("Please fill in the field")
             let inputValue = this.input.value;
             this.input.value = "";
             this.emit('addToDoItem', inputValue);
         }
+    }
+
+    sortTodoItemHandler(){        
+        this.emit('sortToDoItem', this.sortTodoList);
     }
 
     createTodoItem(todoItem){
@@ -211,6 +217,7 @@ class Controller {
         this.view.on('editToDoItem', this.editToDoItem.bind(this));
         this.view.on('deleteToDoItem', this.deleteToDoItem.bind(this));
         this.view.on('checkboxTodoItem', this.checkboxTodoItem.bind(this));
+        this.view.on('sortToDoItem', this.sortToDoItem.bind(this));
         this.model.on('init', this.renderView.bind(this));
         if(this.model.todoItems != []){this.model.emit('init', this.model.todoItems);}
     }
@@ -223,6 +230,29 @@ class Controller {
             completed: false
         });
         this.view.addTodoItem(todoItem);
+    }
+
+    sortToDoItem(sortTodoList){
+        let todoItems = this.model.todoItems;
+        if (sortTodoList){
+            todoItems.sort(function (a, b) {
+                if (a.inputValue > b.inputValue) return -1;
+                if (a.inputValue < b.inputValue) return 1;
+
+                return 0;
+              }); 
+            this.view.sortTodoList = false;
+        }
+        else{
+            todoItems.sort(function (a, b) {
+                if (a.inputValue > b.inputValue) return 1;
+                if (a.inputValue < b.inputValue) return -1;
+                
+                return 0;
+              });
+            this.view.sortTodoList = true;
+        }
+        this.renderView(todoItems);
     }
 
     checkboxTodoItem(todoItemData){
