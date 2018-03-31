@@ -75,6 +75,8 @@ class View extends PubSub{
         this.input = document.getElementById("todo-input");
         this.addButton = document.getElementById("todo-add");
         this.addButton.addEventListener('click', this.addTodoItemHandler.bind(this));
+        this.input.addEventListener('keyup', this.addTodoItemHandler.bind(this));
+
         this.todoList = document.getElementById("todo-list");
         this.todoItemTemplate = 
         `
@@ -94,11 +96,15 @@ class View extends PubSub{
         }
     }
 
-    addTodoItemHandler(){
-        if(!this.input.value) return alert("Please fill in the field")
-        let inputValue = this.input.value;
-        this.input.value = "";
-        this.emit('addToDoItem', inputValue);
+    addTodoItemHandler(e){
+        event.preventDefault();
+        if(e.keyCode === 13 || e.keyCode == undefined){
+            console.log(e.keyCode);
+            if(!this.input.value) return alert("Please fill in the field")
+            let inputValue = this.input.value;
+            this.input.value = "";
+            this.emit('addToDoItem', inputValue);
+        }
     }
 
     createTodoItem(todoItem){
@@ -113,18 +119,25 @@ class View extends PubSub{
     addTodoItem(todoItem){
         let item = this.createTodoItem(todoItem);
         this.todoList.appendChild(item);
-        document.getElementById(todoItem.id).querySelector('input').value = todoItem.inputValue;        
+        let listItem = document.getElementById(todoItem.id);
+        let input = listItem.querySelector('input');
+        input.value = todoItem.inputValue;        
         if(todoItem.completed){
-            document.getElementById(todoItem.id).querySelector('.todo-checkbox').innerHTML = "Done";
-            document.getElementById(todoItem.id).querySelector('input').classList.add("done");
+            listItem.querySelector('.todo-checkbox').innerHTML = "Done";
+            input.classList.add("done");
         }
         else{
-            document.getElementById(todoItem.id).querySelector('.todo-checkbox').innerHTML = "Active";
-            document.getElementById(todoItem.id).querySelector('input').classList.remove("done");
+            listItem.querySelector('.todo-checkbox').innerHTML = "Active";
+            input.classList.remove("done");
         }
-        document.getElementById(todoItem.id).querySelector('.todo-edit').addEventListener('click', this.editTodoItemHandler.bind(this));
-        document.getElementById(todoItem.id).querySelector('.todo-delete').addEventListener('click', this.deleteTodoItemHandler.bind(this));
-        document.getElementById(todoItem.id).querySelector('.todo-checkbox').addEventListener('click', this.checkboxTodoItemHandler.bind(this));
+        listItem.querySelector('.todo-edit').addEventListener('click', this.editTodoItemHandler.bind(this));
+        listItem.querySelector('.todo-delete').addEventListener('click', this.deleteTodoItemHandler.bind(this));
+        listItem.querySelector('.todo-checkbox').addEventListener('click', this.checkboxTodoItemHandler.bind(this));
+        input.addEventListener('keyup', ( function(e){
+            if(e.keyCode === 13){
+                this.editTodoItemHandler(e);
+            }
+        }).bind(this));
     }
 
     checkboxTodoItemHandler({ target }){
@@ -133,7 +146,6 @@ class View extends PubSub{
         let editingTodoItem = todoItem.querySelector('input');
         let todoItemId = todoItem.getAttribute('id');
         if (button.innerHTML == "Active"){
-            console.log(button);
             button.innerHTML = "Done";
             let todoItemData = {
                 id: todoItemId,
@@ -154,9 +166,19 @@ class View extends PubSub{
     }
 
     editTodoItemHandler({ target}){
-        let button = target;
-        let todoItem = target.parentNode.parentNode;
-        let editingTodoItem = todoItem.querySelector('input');
+        let editingTodoItem;
+        let button;
+        let todoItem;
+        if (target.localName === "button"){
+            button = target;
+            todoItem = target.parentNode.parentNode;
+            editingTodoItem = todoItem.querySelector('input');
+        }
+        else{
+            button = target.parentNode.querySelector('.todo-edit');
+            todoItem = target.parentNode;
+            editingTodoItem = target;
+        }
         if (button.innerHTML == "Edit"){
             button.innerHTML = "Save"            
             editingTodoItem.readOnly = false;
