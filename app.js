@@ -3,14 +3,14 @@ class PubSub {
         this.events = {};
     }
 
-    on(evenName, fn){
-        this.events[evenName] =  this.events[evenName] || [];
-        this.events[evenName].push(fn);
+    on(eventName, fn){
+        this.events[eventName] =  this.events[eventName] || [];
+        this.events[eventName].push(fn);
     }
 
-    emit(evenName, params){
-        if(this.events[evenName]){
-            this.events[evenName].forEach(fn => fn(params))
+    emit(eventName, params){
+        if(this.events[eventName]){
+            this.events[eventName].forEach(fn => fn(params))
         }
     }
 }
@@ -75,11 +75,12 @@ class View extends PubSub{
         this.input = document.getElementById("todo-input");
         this.addButton = document.getElementById("todo-add");
         this.sortButton = document.getElementById("todo-sort");
+        this.todoList = document.getElementById("todo-list");
+
         this.addButton.addEventListener('click', this.addTodoItemHandler.bind(this));
         this.sortButton.addEventListener('click', this.sortTodoItemHandler.bind(this));
         this.input.addEventListener('keyup', this.addTodoItemHandler.bind(this));
 
-        this.todoList = document.getElementById("todo-list");
         this.sortTodoList = false;
         this.todoItemTemplate = 
         `
@@ -116,7 +117,7 @@ class View extends PubSub{
     createTodoItem(todoItem){
         let div = document.createElement("div");
         div.id = todoItem.id;
-        div.className = "input-group todo-item col-lg-12 col-sm-11 col-xs-9";
+        div.className = "input-group todo-item";
         div.innerHTML = this.todoItemTemplate;
 
         return div;
