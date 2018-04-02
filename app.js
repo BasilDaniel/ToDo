@@ -101,7 +101,7 @@ class View extends PubSub{
     }
 
     addTodoItemHandler(e){
-        event.preventDefault();
+        e.preventDefault();
         if(e.keyCode === 13 || e.keyCode == undefined){
             if(!this.input.value) return alert("Please fill in the field")
             let inputValue = this.input.value;
